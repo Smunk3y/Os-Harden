@@ -364,26 +364,12 @@ MAIN_USER=$FNRET;
 
 d_IFS=$IFS;
 IFS=$'\n';
-USERS_INPUT_RAW=($(more $(find /home -name "README.desktop") | grep -oP "(?<=^Exec=x-www-browser \")([^\"]+)" | xargs wget -qO- | grep -Pzo "<b>Authorized Administrators(.|\n)*?(?=<\/pre)"));
 is_admin=1;
 IFS=' ';
 
 USERS=();
 ADMINS=();
 
-for line in "${USERS_INPUT_RAW[@]}"; do
-	if [[ "$line" =~ ^...Authorized\ Users ]]; then
-		is_admin=0;
-	elif [[ "$line" =~ ^[a-z]+ ]]; then
-		username=$(echo $line | grep -Po "^[a-z]+");
-
-		if [ $is_admin -eq 1 ]; then
-			ADMINS+=("$username");
-		else
-			USERS+=("$username");
-		fi
-	fi
-done
 
 IFS=$d_IFS;
 
@@ -420,99 +406,6 @@ ufw deny 2049 >> $LOG_FILE 2>&1;
 ufw deny 515 >> $LOG_FILE 2>&1;
 ufw deny 111 >> $LOG_FILE 2>&1;
 
-#################################
-#
-# Manage groups, users, and passwords
-#
-#################################
-
-d_IFS=$IFS;
-IFS=' ';
-logger "Admins: ${ADMINS[@]}";
-logger "Users: ${USERS[@]}";
-yes_no "Are these accounts correct?";
-IFS=$d_IFS;
-
-if [[ $FNRET -eq 1 ]]; then
-	yes_no "Would you like to go through the process of account management?";
-
-	if [[ $FNRET -eq 1 ]]; then
-		ALL_USERS=($(getent passwd {1000..60000} | grep -o "^[^:]*" | tr "\n" " "));
-
-		ALLOWED_USERS=("${USERS[@]} ${ADMINS[@]}");
-		TOTAL=${#ALLOWED_USERS[@]};
-
-		yes_no "Should unauthorized users be removed?";
-
-		if [[ $FNRET -eq 1 ]]; then
-			for USER in "${ALL_USERS[@]}"; do
-				if [[ ! "${ADMINS[@]}" =~ "${USER}" && ! "${USERS[@]}" =~ "${USER}" && ! "${MAIN_USER}" == "${USER}" ]]; then
-					yes_no "Remove user $USER?";
-
-					if [[ $FNRET -eq 1 ]]; then
-						userdel -r "${USER}" >> $LOG_FILE 2>&1;
-
-						logger "Removed user $USER";
-					fi
-				fi
-			done
-		fi
-
-		yes_no "Should passwords be changed?";
-
-		if [[ $FNRET -eq 1 ]]; then
-			# Change passwords
-
-			REMOVE_SUDO_USER=($MAIN_USER);
-			ALLOWED_USERS=("${ALLOWED_USERS[@]/$REMOVE_SUDO_USER}");
-
-			random_password "16";
-			PASSWORD=$FNRET;
-
-			logger "Using password: $PASSWORD";
-
-			echo $PASSWORD >> $PASSWORD_FILE;
-
-			for i in "${!ALLOWED_USERS[@]}"; do
-				USER=${ALLOWED_USERS[$i]};
-
-				yes $PASSWORD | passwd "$USER" >> $LOG_FILE 2>&1;
-
-				logger "Strengthening passwords... ("$(($i + 1))"/${TOTAL})" 1;
-			done
-
-			echo "";
-		fi
-
-		yes_no "Should sudoers be corrected?";
-
-		if [[ $FNRET -eq 1 ]]; then
-			# Set sudo users
-
-			for i in "${!ADMINS[@]}"; do
-				USER=${ADMINS[$i]};
-
-				yes $PASSWORD | sudo passwd "$USER" >> $LOG_FILE 2>&1;
-				usermod -aG sudo "$USER" > /dev/null 2>&1;
-
-				logger "Adding admins to sudo... ("$(($i + 1))"/${#ADMINS[@]})" 1;
-			done
-
-			echo "";
-
-			for i in "${!USERS[@]}"; do
-				USER=${USERS[$i]}
-
-				yes $PASSWORD | sudo passwd "$USER" >> $LOG_FILE 2>&1;
-				deluser "$USER" sudo > /dev/null 2>&1;
-
-				logger "Removing users from sudo... ("$(($i + 1))"/${#USERS[@]})" 1;
-			done
-
-			echo "";
-		fi
-	fi
-fi
 
 #################################
 #
@@ -953,6 +846,25 @@ PURGE_PACKAGES=(
 	"nc"
 	"netcat-*"
 	"ophcrack"
+	"nmap"
+	"aircrack-ng"
+	"hydra"
+	"wireshark"
+	"metasploit-framework"
+	"skipfish"
+	"maltego"
+	"apktool"
+	"sqlmap"
+	"dirb"
+	"eagleeye"
+	"fsociety"
+	"goghost"
+	"hacktronian"
+	"nexphisher"
+	"socialbox"
+	"udork"
+	"zphisher"
+	"ftpscan"
 );
 
 logger "Purging packages... (0/${#PURGE_PACKAGES[@]})" 1;
