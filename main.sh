@@ -1039,12 +1039,12 @@ AUDIT_PARAMS=(
 	"-w /etc/hosts -p wa -k system-locale"
 	"-w /etc/network -p wa -k system-locale"
 	"-w /etc/selinux/ -p wa -k MAC-policy"
-	"-w /var/log/faillog -p wa -k logins"
-	"-w /var/log/lastlog -p wa -k logins"
-	"-w /var/log/tallylog -p wa -k logins"
 	"-w /var/run/utmp -p wa -k session"
 	"-w /var/log/wtmp -p wa -k session"
 	"-w /var/log/btmp -p wa -k session"
+	"-w /var/log/faillog -p wa -k logins"
+	"-w /var/log/lastlog -p wa -k logins"
+	"-w /var/log/tallylog -p wa -k logins"
 	"-a always,exit -F arch=b64 -S chmod -S fchmod -S fchmodat -F auid>=1000 -F auid!=4294967295 -k perm_mod"
 	"-a always,exit -F arch=b32 -S chmod -S fchmod -S fchmodat -F auid>=1000 -F auid!=4294967295 -k perm_mod"
 	"-a always,exit -F arch=b64 -S chown -S fchown -S fchownat -S lchown -F auid>=1000 -F auid!=4294967295 -k perm_mod"
@@ -1183,18 +1183,6 @@ for i in ${!FIREFOX_USER_PREFERENCES[@]}; do
 done
 
 logger "Updated ${#FIREFOX_USER_PREFERENCES[@]} Firefox settings";
-
-#################################
-#
-# Set grub password
-#
-#################################
-
-# logger "Setting grub password...";
-
-# GRUB_PASSWORD=$(yes "$GRUB_PASSWORD" | grub-mkpasswd-pbkdf2 | cut -c33- | tr -d $'\n');
-
-# printf "#!/bin/sh\nexec tail -n +3 \$0\n\nset superusers=\"root\"\npassword_pbkdf2 root $GRUB_PASSWORD" > /etc/grub.d/40_custom;
 
 #################################
 #
