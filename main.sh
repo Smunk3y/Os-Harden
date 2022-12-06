@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # move to script directory
 cd "$(dirname "$0")"
 
@@ -68,11 +66,6 @@ function logger {
 }
 
 function random_password {
-	# local PASSWORD_LENGTH=$1;
-	# local PASSWORD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w "$PASSWORD_LENGTH" | head -n 1);
-
-	# FNRET=$PASSWORD;
-
 	FNRET=$USER_PASSWORD;
 }
 
@@ -375,31 +368,24 @@ IFS=$d_IFS;
 
 
 # Update apt cache
-logger "Updating apt cache...";
+logger "Updating apt things";
 apt_update;
-
-# Update packages
-logger "Updating apt packages...";
 apt_upgrade;
-
-logger "Fixing broken packages...";
 dpkg --configure -a;
 apt --fix-missing update;
 
 # Disable the root user
-logger "Disabling root user...";
+logger "Disabling root user";
 passwd -l root >> $LOG_FILE 2>&1;
 
 # Disable guest account
-logger "Disabling guest account...";
+logger "Disabling guest account";
 echo "allow-guest=false" >> /etc/lightdm/lightdm.conf;
 
 # Enable UFW
-logger "Enabling uncomplicated firewall...";
-
+logger "Enabling uncomplicated firewall";
 sed -i "/ipv6=/Id" /etc/default/ufw >> $LOG_FILE 2>&1;
 echo "ipv6=no" >> /etc/default/ufw;
-
 ufw enable >> $LOG_FILE 2>&1;
 ufw deny 23 >> $LOG_FILE 2>&1;
 ufw deny 2049 >> $LOG_FILE 2>&1;
@@ -447,12 +433,11 @@ INSTALL_PACKAGES=(
 	"gdm3"
 );
 
-logger "Installing packages... (0/${#INSTALL_PACKAGES[@]})" 1;
+logger "Installing preset packages (0/${#INSTALL_PACKAGES[@]})" 1;
 
 for i in ${!INSTALL_PACKAGES[@]}; do
 	PACKAGE=${INSTALL_PACKAGES[$i]};
 	logger "Installing packages... ("$(($i + 1))"/${#INSTALL_PACKAGES[@]}) - $PACKAGE" 1;
-
 	apt_install "$PACKAGE";
 done
 
@@ -508,7 +493,7 @@ OPTIONS=(
 	"noexec"
 );
 
-logger "Verifying partitions... (0/${#OPTIONS[@]})" 1;
+logger "Verifying da partitions (0/${#OPTIONS[@]})" 1;
 
 for i in ${!PARTITIONS[@]}; do
 	PARTITION=${PARTITIONS[$i]};
