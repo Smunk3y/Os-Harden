@@ -2826,5 +2826,3 @@ echo "";
 printf "  This script executed in "
 display_time $SECONDS
 echo "";
-echo "  Made by Matteo Polak";
-echo "";
