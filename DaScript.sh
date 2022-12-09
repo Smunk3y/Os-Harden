@@ -53,9 +53,22 @@ ansible-playbook /etc/ansible/harden.yml
 # re-install 'gdm3' ( Display manager for the linux its short form for GNOME Display Manager 3)
 apt install gdm3 -y
 
+<<<<<<< Updated upstream
+=======
+# unlock main user
+#usermod -U $(whoami)
+
+>>>>>>> Stashed changes
 # set user password to root
-usermod -p $(whoami) root
+#usermod -p $(whoami) root
 #=========================================================================================================
 #=========================================================================================================
 #=========================================================================================================
 #=========================================================================================================
+<<<<<<< Updated upstream
+=======
+
+
+#Run a older script, its long and messy
+sh WuTangClan.sh
+>>>>>>> Stashed changes
