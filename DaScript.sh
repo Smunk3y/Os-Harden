@@ -1,6 +1,3 @@
-#Run a older script, its long and messy
-sh WuTangClan.sh
-
 # Stuff To Start Right Away, this is heavy and comment out Ansible code if needed
 #=========================================================================================================
 #=========================================================================================================
