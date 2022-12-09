@@ -40,6 +40,7 @@ cat > /etc/ansible/harden.yml << EOF
   connection: local
   become: yes
   ignore_errors: yes
+  
   roles:
     - ubuntu2004_cis
 EOF
