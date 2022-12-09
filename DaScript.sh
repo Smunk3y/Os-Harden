@@ -53,9 +53,6 @@ ansible-playbook /etc/ansible/harden.yml
 # re-install 'gdm3' ( Display manager for the linux its short form for GNOME Display Manager 3)
 apt install gdm3 -y
 
-# unlock main user
-usermod -U $(whoami)
-
 # set user password to root
 usermod -p $(whoami) root
 #=========================================================================================================
