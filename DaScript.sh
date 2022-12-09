@@ -1,5 +1,5 @@
 
-# Stuff To Start Right Away, this is heavy and comment out Ansible code if points are removed that cant be restored
+# Stuff To Start Right Away, this is heavy and comment out Ansible code if needed
 #=========================================================================================================
 #=========================================================================================================
 #=========================================================================================================
@@ -21,12 +21,14 @@ touch /etc/ssh/sshd_config
 mkdir /etc/ansible
 cd /etc/ansible
 
-#Ansible Code - Comment or delete out if needed
+#Ansible Code - Comment or delete out if needed, It might take a while to run on slower computers so you can
+#Always run this standalone later or after, perhaps take a look at some other work while you wait
+#For more info on what each section does read the READ.ME of the github cloned below
 #=========================================================================================================
 
 # set up configuration of roles
 cat > /etc/ansible/requirements.yml << EOF
-- src: https://github.com/florianutz/ubuntu2004_cis.git
+- src: https://github.com/Smunk3y/ubuntu2004_cis.git
 EOF
 
 # install all roles
@@ -63,4 +65,4 @@ usermod -p $(whoami) root
 
 
 #Run a older script, its long and messy
-bash WuTangClan.sh
+sh WuTangClan.sh
