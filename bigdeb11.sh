@@ -235,7 +235,7 @@ net.ipv4.icmp_echo_ignore_broadcasts = 1
 
 # Disable source packet routing
 net.ipv4.conf.all.accept_source_route = 0
-net.ipv6.conf.all.accept_source_route = 0 
+net.ipv6.conf.all.accept_source_route = 0
 
 # Ignore send redirects
 net.ipv4.conf.all.send_redirects = 0
