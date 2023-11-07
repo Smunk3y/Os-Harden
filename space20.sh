@@ -44,7 +44,7 @@ EOL
 	 maxempty = 0
 	 dictcheck = 1
 	 dictpath = /usr/share/dict/words
-	 EOL
+EOL
 
 	 grep -qxF 'password requisite pam_pwquality.so retry=3' /etc/pam.d/common-password || echo 'password requisite pam_pwquality.so retry=3' >> /etc/pam.d/common-password
 
