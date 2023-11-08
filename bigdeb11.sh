@@ -1,5 +1,7 @@
 # Might not Run, Useful Commands in here that should be run on own if looking for points late onto the comp
 
+
+
 # Check if running as root
 if [ "$(id -u)" != "0" ]; then
    echo "This script must be run as root" 1>&2
@@ -43,10 +45,7 @@ sed -i '/^PASS_MIN_DAYS/c\PASS_MIN_DAYS 7' /etc/login.defs
 sed -i '/^PASS_WARN_AGE/c\PASS_WARN_AGE 14' /etc/login.defs
 
 # Add brute force security measures
-cat >> /etc/pam.d/common-auth << EOF
-auth required pam_faillock.so preauth silent audit deny=5 unlock_time=1800
-auth required pam_faillock.so authfail audit deny=5 unlock_time=1800
-EOF
+
 
 # Enable the firewall and set default policies
 ufw enable
@@ -81,11 +80,17 @@ sed -i '/^AllowGuest/c\AllowGuest=false' /etc/gdm3/custom.conf
 systemctl restart gdm
 
 # Correct file permissions on important system files
-chmod 600 /etc/passwd
+chmod 644 /etc/passwd
 chmod 600 /etc/shadow
-chmod 600 /etc/group
+chmod 644 /etc/group
 chmod 600 /etc/gshadow
-chmod -R 700 /etc/ssh
+chmod 600 /etc/ssh/ssh_host_*_key
+chmod 644 /etc/ssh/ssh_host_*_key.pub
+chmod 644 /etc/ssh/sshd_config
+chmod 644 /etc/ssh/ssh_config
+# Ensure the SSH directory itself is set properly
+chmod 755 /etc/ssh
+
 
 # Kernel level hardening
 cat >> /etc/sysctl.conf << EOF
