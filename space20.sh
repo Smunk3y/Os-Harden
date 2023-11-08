@@ -148,3 +148,59 @@ EOF
 
   Echo "Changing Root PASSWD To Space!B3ans5"
   echo 'root:Space!B3ans5' | chpasswd
+
+  echo "Updating Kernel"
+  apt install --only-upgrade linux-generic -y
+
+  echo "Checking Installed Programs for Games and Hacking tools, This is out putted to script_output.txt"
+  echo "Games:" > script_output.txt
+  dpkg-query -Wf '${Package;-40}${Description}\n' | grep -i game >> script_output.txt
+  echo "Potential Hacking Tools:" >> script_output.txt
+  dpkg-query -Wf '${Package;-40}${Description}\n' | grep -E -i 'nmap|wireshark|metasploit|aircrack-ng|burpsuite|hydra|john|sqlmap|nikto|kali|pentest|exploit|crack|sniff|forensic|keylogger|hacker|phishing|spoofer|mitm|enum4linux|hashcat|netcat|tcpdump|ettercap|wpscan|owasp|recon-ng' >> script_output.txt
+
+  echo "Install & Run AIDE"
+  apt-get install aide -y
+  aideinit
+  mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db
+  echo "0 3 * * * /usr/bin/aide.wrapper --config /etc/aide/aide.conf --check" | crontab -
+
+  echo "Disabling Unused File Systems"
+  cat >> /etc/modprobe.d/unused_filesystems.conf << EOF
+  install cramfs /bin/true
+  install freevxfs /bin/true
+  install jffs2 /bin/true
+  install hfs /bin/true
+  install hfsplus /bin/true
+  install squashfs /bin/true
+  install udf /bin/true
+  install vfat /bin/true
+EOF
+
+  echo "Disable core dumps"
+  echo '* hard core 0' >> /etc/security/limits.conf
+  echo 'fs.suid_dumpable = 0' >> /etc/sysctl.conf
+
+  echo "Disable USB storage for security"
+  echo "install usb-storage /bin/true" >> /etc/modprobe.d/disable-usb-storage.conf
+
+  echo "Limiting access to su command"
+  dpkg-statoverride --update --add root sudo 4750 /bin/su
+
+  echo "Some Ip Tables Editing (Could Cuase Issues With SHH/CSS)"
+  iptables -A INPUT -i lo -j ACCEPT
+  iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+  iptables -A INPUT -p tcp --dport 2222 -j ACCEPT
+  iptables -P INPUT DROP
+  iptables -P FORWARD DROP
+  iptables -P OUTPUT ACCEPT
+  iptables-save > /etc/iptables/rules.v4
+
+  if yes_no "Would You Like To Install APP_ARMOR?"; then
+    echo "Installing"
+    apt-get install apparmor apparmor-utils -y
+    aa-enforce /etc/apparmor.d/*
+  else
+    echo "Ok"
+  fi
+
+  
