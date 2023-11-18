@@ -203,4 +203,97 @@ EOF
     echo "Ok"
   fi
 
-  
+  if yes_no "Should NFS Be Upkept"; then
+    sudo sed -i 's/^#NFS4_SUPPORT="no"/NFS4_SUPPORT="yes"/' /etc/default/nfs-common
+    echo "Upkept"
+  else
+    sudo systemctl stop nfs-blkmap
+    sudo systemctl disable nfs-blkmap
+    sudo systemctl stop nfs-idmapd
+    sudo systemctl disable nfs-idmapd
+    sudo systemctl stop nfs-mountd
+    sudo systemctl disable nfs-mountd
+    sudo systemctl stop nfsdcld
+    sudo systemctl disable nfsdcld
+    sudo systemctl stop nfs-server
+    sudo systemctl disable nfs-server
+    sudo systemctl stop nfs-kernel-server
+    sudo systemctl disable nfs-kernel-server
+    echo "All specified NFS services have been disabled."
+  fi
+
+  if yes_no "Should Apache Be Upkept"; then
+
+      sudo systemctl enable apache2
+      sudo systemctl start apache2
+
+      sudo sed -i 's/ServerSignature On/ServerSignature Off/' /etc/apache2/apache2.conf
+      sudo sed -i 's/ServerTokens OS/ServerTokens Prod/' /etc/apache2/apache2.conf
+
+      sudo sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/Options Indexes FollowSymLinks/Options FollowSymLinks/' /etc/apache2/apache2.conf
+      sudo systemctl restart apache2
+
+      # Configure the firewall
+      echo "Configuring the firewall to allow HTTP and HTTPS..."
+      sudo ufw allow 'Apache Full'
+      echo "Apache has been configured for basic security and allowed through the firewall."
+  else
+      # Stop and disable Apache service
+      sudo systemctl stop apache2
+      sudo systemctl disable apache2
+
+      echo "Apache service has been stopped and disabled."
+  fi
+
+  if yes_no "Should Edits Be Made To sysctl.conf?"; then
+
+    sudo cp /etc/sysctl.conf /etc/sysctl.conf.backup
+
+
+    # IPv4 TIME-WAIT ASSASSINATION Protection
+    sudo sed -i '/^net\.ipv4\.tcp_rfc1337/d' /etc/sysctl.conf
+    echo 'net.ipv4.tcp_rfc1337 = 1' | sudo tee -a /etc/sysctl.conf > /dev/null
+
+    # IPv4 TCP SYN Cookies
+    sudo sed -i '/^net\.ipv4\.tcp_syncookies/d' /etc/sysctl.conf
+    echo 'net.ipv4.tcp_syncookies = 1' | sudo tee -a /etc/sysctl.conf > /dev/null
+
+    # Disable IPv4 forwarding
+    sudo sed -i '/^net\.ipv4\.ip_forward/d' /etc/sysctl.conf
+    echo 'net.ipv4.ip_forward = 0' | sudo tee -a /etc/sysctl.conf > /dev/null
+
+    # Disable Source Routing
+    sudo sed -i '/^net\.ipv4\.conf\.all\.accept_source_route/d' /etc/sysctl.conf
+    echo 'net.ipv4.conf.all.accept_source_route = 0' | sudo tee -a /etc/sysctl.conf > /dev/null
+    sudo sed -i '/^net\.ipv4\.conf\.default\.accept_source_route/d' /etc/sysctl.conf
+    echo 'net.ipv4.conf.default.accept_source_route = 0' | sudo tee -a /etc/sysctl.conf > /dev/null
+
+    # Disable Send Redirects
+    sudo sed -i '/^net\.ipv4\.conf\.all\.send_redirects/d' /etc/sysctl.conf
+    echo 'net.ipv4.conf.all.send_redirects = 0' | sudo tee -a /etc/sysctl.conf > /dev/null
+    sudo sed -i '/^net\.ipv4\.conf\.default\.send_redirects/d' /etc/sysctl.conf
+    echo 'net.ipv4.conf.default.send_redirects = 0' | sudo tee -a /etc/sysctl.conf > /dev/null
+
+    # Enable Martian Packet Logging
+    sudo sed -i '/^net\.ipv4\.conf\.all\.log_martians/d' /etc/sysctl.conf
+    echo 'net.ipv4.conf.all.log_martians = 1' | sudo tee -a /etc/sysctl.conf > /dev/null
+
+    # Source Address Verification
+    sudo sed -i '/^net\.ipv4\.conf\.default\.rp_filter/d' /etc/sysctl.conf
+    echo 'net.ipv4.conf.default.rp_filter = 1' | sudo tee -a /etc/sysctl.conf > /dev/null
+    sudo sed -i '/^net\.ipv4\.conf\.all\.rp_filter/d' /etc/sysctl.conf
+    echo 'net.ipv4.conf.all.rp_filter = 1' | sudo tee -a /etc/sysctl.conf > /dev/null
+
+    # Ignore ICMP Redirects
+    sudo sed -i '/^net\.ipv4\.conf\.all\.accept_redirects/d' /etc/sysctl.conf
+    echo 'net.ipv4.conf.all.accept_redirects = 0' | sudo tee -a /etc/sysctl.conf > /dev/null
+    sudo sed -i '/^net\.ipv4\.conf\.default\.accept_redirects/d' /etc/sysctl.conf
+    echo 'net.ipv4.conf.default.accept_redirects = 0' | sudo tee -a /etc/sysctl.conf > /dev/null
+
+    # Apply sysctl changes
+    sudo sysctl -p
+
+    echo "Sysctl configurations have been updated for security."
+  else 
+    echo "Keep in mind that points are ussaly found in editing sysctl.conf"
+  fi
