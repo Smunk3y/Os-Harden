@@ -83,8 +83,7 @@ EOF
   ufw reload
 
   echo "Moving / Renaming Files in the /home Directory (This Could Cause Errors)"
-  mkdir Notallowed
-  find /home -type f \( -iname "*.txt" -o -iname "*.md" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.mp3" -o -iname "*.mp4" -o -iname "*.avi" -o -iname "*.mkv" -o -iname "*.mov" -o -iname "*.wav" -o -iname "*.flac" \) -exec mv {} ./Notallowed/ \;
+  find /home -type f \( -iname "*.txt" -o -iname "*.md" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.mp3" -o -iname "*.mp4" -o -iname "*.avi" -o -iname "*.mkv" -o -iname "*.mov" -o -iname "*.wav" -o -iname "*.flac" \) > script_output.txt
 
   if yes_no "Should SSH be configured and maintained?"; then
     echo "Configuring SSH"
@@ -102,8 +101,8 @@ EOF
     systemctl restart sshd
   else
     echo "Removing SSH"
-    sudo apt-get remove --purge openssh-server
-    sudo apt-get remove --purge openssh-client
+    sudo apt-get remove --purge openssh-server -y
+    sudo apt-get remove --purge openssh-client -y
     rm -rf ~/.ssh/
     sudo rm -rf /home/*/.ssh/
     sudo rm -rf /root/.ssh/
@@ -115,12 +114,17 @@ EOF
     sudo ufw deny 22
   fi
 
-  echo "GNOME Guest&Root Login Disabled"
+  echo "GNOME Guest&Root Login Disabled + Extra Config"
   cp "/etc/gdm3/custom.conf" "/etc/gdm3/custom.conf.backup"
   sed -i '/^AllowGuest/c\AllowGuest=false' "/etc/gdm3/custom.conf"
   sed -i '/^\[daemon\]/a AllowGuest=false' "/etc/gdm3/custom.conf"
   sed -i '/^AllowRoot/c\AllowRoot=false' "/etc/gdm3/custom.conf"
   sed -i '/^\[security\]/a AllowRoot=false' "/etc/gdm3/custom.conf"
+  sudo -i '/\[daemon\]/a AutomaticLoginEnable=False' "/etc/gdm3/custom.conf"
+  sudo -i 's/^AutomaticLoginEnable=True/AutomaticLoginEnable=False/' "/etc/gdm3/custom.conf"
+  gsettings set org.gnome.desktop.session idle-delay 120
+  gsettings set org.gnome.desktop.screensaver lock-enabled true
+
 
   echo "Changing Systme File Permissions"
     # Correct file permissions on important system files
@@ -146,14 +150,14 @@ EOF
 EOF
   sysctl -p
 
-  Echo "Changing Root PASSWD To Space!B3ans5"
+  echo "Changing Root PASSWD To Space!B3ans5"
   echo 'root:Space!B3ans5' | chpasswd
 
   echo "Updating Kernel"
   apt install --only-upgrade linux-generic -y
 
   echo "Checking Installed Programs for Games and Hacking tools, This is out putted to script_output.txt"
-  echo "Games:" > script_output.txt
+  echo "Games:" >> script_output.txt
   dpkg-query -Wf '${Package;-40}${Description}\n' | grep -i game >> script_output.txt
   echo "Potential Hacking Tools:" >> script_output.txt
   dpkg-query -Wf '${Package;-40}${Description}\n' | grep -E -i 'nmap|wireshark|metasploit|aircrack-ng|burpsuite|hydra|john|sqlmap|nikto|kali|pentest|exploit|crack|sniff|forensic|keylogger|hacker|phishing|spoofer|mitm|enum4linux|hashcat|netcat|tcpdump|ettercap|wpscan|owasp|recon-ng' >> script_output.txt
@@ -202,5 +206,3 @@ EOF
   else
     echo "Ok"
   fi
-
-  
