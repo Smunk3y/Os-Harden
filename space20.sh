@@ -82,7 +82,7 @@ EOF
   systemctl enable ufw
   ufw reload
 
-  echo "Moving / Renaming Files in the /home Directory (This Could Cause Errors)"
+  echo " Lisiting Files in the /home Directory to script_output.txt"
   find /home -type f \( -iname "*.txt" -o -iname "*.md" -o -iname "*.jpg" -o -iname "*.png" -o -iname "*.mp3" -o -iname "*.mp4" -o -iname "*.avi" -o -iname "*.mkv" -o -iname "*.mov" -o -iname "*.wav" -o -iname "*.flac" \) > script_output.txt
 
   if yes_no "Should SSH be configured and maintained?"; then
@@ -300,7 +300,7 @@ EOF
     sudo sysctl -p
 
     echo "Sysctl configurations have been updated for security."
-  else 
+  else
     echo "Keep in mind that points are ussaly found in editing sysctl.conf"
   fi
 >>>>>>> b4de62725b7e21569673f87e9332d01f1e1b3b27
