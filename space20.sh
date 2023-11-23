@@ -206,8 +206,6 @@ EOF
   else
     echo "Ok"
   fi
-<<<<<<< HEAD
-=======
 
   if yes_no "Should NFS Be Upkept"; then
     sudo sed -i 's/^#NFS4_SUPPORT="no"/NFS4_SUPPORT="yes"/' /etc/default/nfs-common
