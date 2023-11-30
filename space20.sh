@@ -137,6 +137,17 @@ EOF
   gsettings set org.gnome.desktop.session idle-delay 120
   gsettings set org.gnome.desktop.screensaver lock-enabled true
 
+    echo "What is the Main user?"
+    read DAUSER
+
+    export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u $USER)/bus
+    sudo -u $DAUSER gsettings set org.gnome.desktop.session idle-delay 300
+    sudo -u $DAUSER gsettings set org.gnome.desktop.screensaver lock-enabled true
+    sudo -u $DAUSER gsettings set org.gnome.desktop.remote-desktop.rdp enable falsecc
+    sudo -u $DAUSER gsettings set org.gnome.desktop.screensaver lock-delay 10
+    sudo -u $DAUSER gsettings set org.gnome.desktop.lockdown disable-user-switching true
+    sudo -u $DAUSER gsettings set org.gnome.desktop.lockdown disable-lock-screen false
+
 
   echo "Changing Systme File Permissions"
     # Correct file permissions on important system files
@@ -314,8 +325,20 @@ EOF
     echo "Keep in mind that points are ussaly found in editing sysctl.conf"
   fi
 
-  echo"Force Updates"
+  echo "Force Updates"
   update-manager -d
+
+  if yes_no "Remove All Known Hacking Tools From this Computer?"; then
+    #wireshark
+    sudo apt-get remove --purge wireshark
+    rm -rf ~/.config/wireshark/
+    rm -rf wireshark
+
+
+
+  else
+    echo "Make Sure only allowed tools are installed"
+  fi
 
 
   if yes_no "Enable GRUB Signature Checks"; then
