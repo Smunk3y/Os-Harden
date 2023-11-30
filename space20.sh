@@ -43,34 +43,46 @@ EOL
 	 echo "Editing Password Policy's"
 	 sudo apt-get install -y libpam-pwquality
 
+   cp /etc/security/pwquality.conf /etc/security/pwquality.conf.backup
 	 cat > /etc/security/pwquality.conf <<EOL
-	 minlen = 12
-	 minclass = 4
-	 minrepeat = 0
-	 maxrepeat = 2
-	 minsequence = 4
-	 mincomplex = 3
-	 maxconsecutive = 0
-	 maxclassrepeat = 0
-	 reject_username = true
-	 gecoscheck = true
-	 maxsequence = 3
-	 maxempty = 0
-	 dictcheck = 1
-	 dictpath = /usr/share/dict/words
+minlen = 12
+minclass = 4
+minrepeat = 0
+maxrepeat = 2
+minsequence = 4
+mincomplex = 3
+maxconsecutive = 0
+maxclassrepeat = 0
+reject_username = true
+gecoscheck = true
+maxsequence = 3
+maxempty = 0
+dictcheck = 1
+dictpath = /usr/share/dict/words
+ucredit = -1
+lcrdeit = -1
+ocredit = -1
+dcredit = -1
+usercheck = 1
 EOL
 
+
+   cp /etc/login.defs /etc/login.defs.backup
+   sed -i '/^ENCRYPT_METHOD/c\ENCRYPT_METHOD SHA512' /etc/login.defs
+   sed -i '/^LOGIN_RETRIES/c\LOGIN_RETRIES 4' /etc/login.defs
 	 grep -qxF 'password requisite pam_pwquality.so retry=3' /etc/pam.d/common-password || echo 'password requisite pam_pwquality.so retry=3' >> /etc/pam.d/common-password
+   sudo sed -i '/pam_unix.so/ s/remember=[0-9]*/remember=5/' /etc/pam.d/common-password
+   echo "password requisite pam_unix.so remember=5" | tee -a /etc/pam.d/common-password
 
 	 # Set password expiration policies
-	 sed -i '/^PASS_MAX_DAYS/c\PASS_MAX_DAYS 90' /etc/login.defs
+   sed -i '/^PASS_MAX_DAYS/c\PASS_MAX_DAYS 30' /etc/login.defs
 	 sed -i '/^PASS_MIN_DAYS/c\PASS_MIN_DAYS 7' /etc/login.defs
 	 sed -i '/^PASS_WARN_AGE/c\PASS_WARN_AGE 14' /etc/login.defs
 
    echo "Turning On Account Lockout After Multiple Failed Attempts"
    cat >> /etc/pam.d/common-auth << EOF
-   auth required pam_faillock.so preauth silent audit deny=5 unlock_time=1800
-   auth required pam_faillock.so authfail audit deny=5 unlock_time=1800
+auth required pam_faillock.so preauth silent audit deny=5 unlock_time=1800
+auth required pam_faillock.so authfail audit deny=5 unlock_time=1800
 EOF
 
   echo "Setup UFW (Remember To Manually Allow anything requested)"
@@ -141,12 +153,12 @@ EOF
 
   echo "Kernel level hardening"
   cat >> /etc/sysctl.conf << EOF
-  # Kernel level security enhancements
-  fs.suid_dumpable = 0
-  kernel.randomize_va_space = 2
-  kernel.kptr_restrict = 2
-  kernel.exec-shield = 1
-  kernel.dmesg_restrict = 1
+# Kernel level security enhancements
+fs.suid_dumpable = 0
+kernel.randomize_va_space = 2
+kernel.kptr_restrict = 2
+kernel.exec-shield = 1
+kernel.dmesg_restrict = 1
 EOF
   sysctl -p
 
@@ -301,4 +313,14 @@ EOF
   else
     echo "Keep in mind that points are ussaly found in editing sysctl.conf"
   fi
->>>>>>> b4de62725b7e21569673f87e9332d01f1e1b3b27
+
+  echo"Force Updates"
+  update-manager -d
+
+
+  if yes_no "Enable GRUB Signature Checks"; then
+    echo "set check_signatures=enforce" | sudo tee -a /etc/grub.d/40_custom
+    echo "export check_signatures" | sudo tee -a /etc/grub.d/40_custom
+  else
+    echo "Ok"
+  fi

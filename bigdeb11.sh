@@ -92,6 +92,23 @@ chmod 644 /etc/ssh/ssh_config
 chmod 755 /etc/ssh
 
 
+echo"Remove SUID Priv's From Common Commands"
+
+UTILITIES="/bin/cp /bin/mv /bin/rm /bin/dd /bin/cat /bin/chmod /usr/bin/chown /bin/ln /usr/bin/who /usr/bin/w /usr/bin/whereis /usr/bin/which /bin/kill /usr/bin/touch /usr/bin/env /usr/bin/tee /usr/bin/find"
+
+# Loop through each utility and remove the SUID bit
+for utility in $UTILITIES; do
+    if [ -f "$utility" ]; then
+        echo "Removing SUID bit from $utility"
+        sudo chmod u-s "$utility"
+    else
+        echo "Utility not found: $utility"
+    fi
+done
+
+echo "SUID removal process completed."
+
+
 # Kernel level hardening
 cat >> /etc/sysctl.conf << EOF
 # Kernel level security enhancements
