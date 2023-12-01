@@ -19,8 +19,8 @@ yes_no() {
 
   #Chage Wallpaper
 	echo "Changing The Wallpaper"
-  wget -O /tmp/spacebeans.png "https://i.imgur.com/gngtbRq.png"
-  gsettings set org.gnome.desktop.background picture-uri 'file:///tmp/spacebeans.png'
+  wget -O /home/spacebeans.png "https://i.imgur.com/gngtbRq.png"
+
 
 	cat > /etc/apt/sources.list <<EOL
 deb http://archive.ubuntu.com/ubuntu/ focal main restricted universe multiverse
@@ -147,6 +147,7 @@ EOF
     sudo -u $DAUSER gsettings set org.gnome.desktop.screensaver lock-delay 10
     sudo -u $DAUSER gsettings set org.gnome.desktop.lockdown disable-user-switching true
     sudo -u $DAUSER gsettings set org.gnome.desktop.lockdown disable-lock-screen false
+    sudo -u $DAUSER gsettings set org.gnome.desktop.background picture-uri 'file:///home/spacebeans.png'
 
 
   echo "Changing Systme File Permissions"
@@ -325,8 +326,7 @@ EOF
     echo "Keep in mind that points are ussaly found in editing sysctl.conf"
   fi
 
-  echo "Force Updates"
-  update-manager -d
+
 
   if yes_no "Remove All Known Hacking Tools From this Computer?"; then
     hackingtools=(
@@ -407,3 +407,6 @@ EOF
   else
     echo "Ok"
   fi
+
+  echo "Force Updates"
+  update-manager -d
