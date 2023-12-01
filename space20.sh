@@ -329,12 +329,72 @@ EOF
   update-manager -d
 
   if yes_no "Remove All Known Hacking Tools From this Computer?"; then
-    #wireshark
-    sudo apt-get remove --purge wireshark
-    rm -rf ~/.config/wireshark/
-    rm -rf wireshark
+    hackingtools=(
+    "hydra"
+    "nmap"
+    "john"
+    "metasploit-framework"
+    "aircrack-ng"
+    "wireshark"
+    "burpsuite"
+    "sqlmap"
+    "ettercap"
+    "kismet"
+    "nikto"
+    "wpscan"
+    "hashcat"
+    "netcat"
+    "tcpdump"
+    "zenmap"
+    "hping3"
+    "ophcrack"
+    "yersinia"
+    "dsniff"
+    "ferret"
+    "sid"
+    "gqrx-sdr"
+    "maltego"
+    "reaver"
+    "bluesnarfer"
+    "redsocks"
+    "mimikatz"
+    "beef-xss"
+    "king-phisher"
+    "gobuster"
+    "snort"
+    "suricata"
+    "masscan"
+    "radare2"
+    "cuckoo"
+    "exploitdb"
+    "seclists"
+    "binwalk"
+    "foremost"
+    "volatility"
+    "wireshark"
+    "scapy"
+    "socat"
+    "zaproxy"
+    "arp-scan"
+    "angry-ip-scanner"
+    "lynis"
+    "chkrootkit"
+    "rkhunter"
+    "tcpflow"
+    "sslsplit"
+    "sslstrip"
+)
 
+  # Loop through each tool and remove it
+  for hackingtools in "${hackingtools[@]}"; do
+      echo "Removing $hackingtools..."
+      sudo apt-get remove "$hackingtools"
+      sudo apt-get purge "$hackingtools"
+  done
 
+  sudo apt-get autoremove
+
+  echo "Uninstallation process completed."
 
   else
     echo "Make Sure only allowed tools are installed"
