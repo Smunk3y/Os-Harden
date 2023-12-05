@@ -130,6 +130,9 @@ EOF
   cp "/etc/gdm3/custom.conf" "/etc/gdm3/custom.conf.backup"
   sed -i '/^AllowGuest/c\AllowGuest=false' "/etc/gdm3/custom.conf"
   sed -i '/^\[daemon\]/a AllowGuest=false' "/etc/gdm3/custom.conf"
+  sed -i '/^User=/d' /etc/gdm3/custom.conf
+  sed -i '/^Group=/d' /etc/gdm3/custom.conf
+  sudo sed -i '/^DisallowTCP=/d' /etc/gdm3/custom.conf && echo 'DisallowTCP=true' | sudo tee -a /etc/gdm3/custom.conf
   sed -i '/^AllowRoot/c\AllowRoot=false' "/etc/gdm3/custom.conf"
   sed -i '/^\[security\]/a AllowRoot=false' "/etc/gdm3/custom.conf"
   sudo -i '/\[daemon\]/a AutomaticLoginEnable=False' "/etc/gdm3/custom.conf"
@@ -156,6 +159,9 @@ EOF
   chmod 600 /etc/shadow
   chmod 644 /etc/group
   chmod 600 /etc/gshadow
+  chmod 700 /home
+  chmod 700 /home/*
+  chmod 600 /swapfile
   chmod 600 /etc/ssh/ssh_host_*_key
   chmod 644 /etc/ssh/ssh_host_*_key.pub
   chmod 644 /etc/ssh/sshd_config
@@ -173,6 +179,11 @@ kernel.exec-shield = 1
 kernel.dmesg_restrict = 1
 EOF
   sysctl -p
+
+  echo "Enabling Kernel Lockdown"
+  sed -i '/^GRUB_CMDLINE_LINUX_DEFAULT=/ s/"$/ lockdown=integrity"/' /etc/default/grub && update-grub
+
+
 
   echo "Changing Root PASSWD To Space!B3ans5"
   echo 'root:Space!B3ans5' | chpasswd
@@ -211,8 +222,30 @@ EOF
   echo "Disable USB storage for security"
   echo "install usb-storage /bin/true" >> /etc/modprobe.d/disable-usb-storage.conf
 
+  echo "Max Process Limit Added"
+  echo '* hard nproc 1980' | sudo tee -a /etc/security/limits.conf
+
+
   echo "Limiting access to su command"
   dpkg-statoverride --update --add root sudo 4750 /bin/su
+
+  echo "Confiuring Auditd"
+  sed -i '/^local_events/ c\local_events = yes' /etc/audit/auditd.conf
+  auditctl -w /var/log/lastlog -p war -k logins
+  sed -i '/^max_log_file/ c\max_log_file = 64' /etc/audit/auditd.conf
+  sed -i '/^max_log_file_action/ c\max_log_file_action = ROTATE' /etc/audit/auditd.conf
+  sed -i '/^num_logs/ c\num_logs = 128 ' /etc/audit/auditd.conf
+  auditctl -w /var/run/faillock/ -p war -k login_failures
+  auditctl -w /etc/passwd -p wa -k passwd_changes
+  auditctl -w /etc/shadow -p wa -k shadow_changes
+  sudo auditctl -w /path/to/sensitive_file -p rwxa -k file_monitor
+  sudo auditctl -w /home/specific_user -p wa -k user_monitor
+  sudo echo "-e 2" >> /etc/audit/rules.d/audit.rules
+  sudo sed -i '/^space_left_action/ c\space_left_action = EMAIL' /etc/audit/auditd.conf
+  sudo sed -i '/^action_mail_acct/ c\action_mail_acct = root@localhost' /etc/audit/auditd.conf
+  sudo sed -i '/^admin_space_left_action/ c\admin_space_left_action = SUSPEND' /etc/audit/auditd.conf
+  sudo sed -i '/^log_format/ c\log_format = ENRICHED' /etc/audit/auditd.conf
+  systemctl restart auditd
 
   echo "Some Ip Tables Editing (Could Cuase Issues With SHH/CSS)"
   iptables -A INPUT -i lo -j ACCEPT
