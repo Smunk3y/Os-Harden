@@ -110,6 +110,7 @@ EOF
     echo 'MaxAuthTries 3' >> /etc/ssh/sshd_config
     echo 'LoginGraceTime 60' >> /etc/ssh/sshd_config
     ufw allow 2222
+    sudo ufw allow OpenSSH
     systemctl restart sshd
   else
     echo "Removing SSH"
@@ -166,6 +167,14 @@ EOF
   chmod 644 /etc/ssh/ssh_host_*_key.pub
   chmod 644 /etc/ssh/sshd_config
   chmod 644 /etc/ssh/ssh_config
+  chmod 700 /root
+  chmod 600 /boot/grub/grub.cfg
+  chmod 600 /etc/fstab
+  chmod 600 /etc/crontab
+  chmod 700 /etc/cron.*  # This secures all cron directories
+  chmod 755 /etc /bin /sbin /lib /usr/bin /usr/sbin /usr/lib
+  chmod 440 /etc/sudoers
+  chmod 750 /etc/sudoers.d
   # Ensure the SSH directory itself is set properly
   chmod 755 /etc/ssh
 
@@ -183,10 +192,24 @@ EOF
   echo "Enabling Kernel Lockdown"
   sed -i '/^GRUB_CMDLINE_LINUX_DEFAULT=/ s/"$/ lockdown=integrity"/' /etc/default/grub && update-grub
 
-
-
-  echo "Changing Root PASSWD To Space!B3ans5"
+  echo "Changing Root PASSWD To Space!B3ans5 and LOCKING IT"
   echo 'root:Space!B3ans5' | chpasswd
+  sudo passwd --lock root
+
+  echo "Setting Common System Accounts to NOLOGIN"
+  for user in syslog nobody games gnats; do
+    sudo usermod -s /usr/sbin/nologin $user
+  done
+
+  if yes_no "Set all sys accounts to nologin?"; then
+    for user in daemon bin nobody sys sync games man lp mail news uucp proxy www-data backup list irc gnats ntp; do
+    sudo usermod -s /usr/sbin/nologin $user
+    done
+  else
+    echo "OK"
+  fi
+
+
 
   echo "Updating Kernel"
   apt install --only-upgrade linux-generic -y
@@ -288,15 +311,19 @@ EOF
       sudo systemctl enable apache2
       sudo systemctl start apache2
 
-      sudo sed -i 's/ServerSignature On/ServerSignature Off/' /etc/apache2/apache2.conf
-      sudo sed -i 's/ServerTokens OS/ServerTokens Prod/' /etc/apache2/apache2.conf
+      sudo sed -i '/^ServerSignature\s*On/d' /etc/apache2/conf-enabled/security.conf
+      grep -q '^ServerSignature\s*Off$' /etc/apache2/conf-enabled/security.conf || echo 'ServerSignature Off' | sudo tee -a /etc/apache2/conf-enabled/security.conf
+
+      sudo sed -i '/^ServerTokens\s*Full/d' /etc/apache2/conf-enabled/security.conf
+      grep -q '^ServerTokens\s*Prod$' /etc/apache2/conf-enabled/security.conf || echo 'ServerTokens Prod' | sudo tee -a /etc/apache2/conf-enabled/security.conf
 
       sudo sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/Options Indexes FollowSymLinks/Options FollowSymLinks/' /etc/apache2/apache2.conf
       sudo systemctl restart apache2
 
       # Configure the firewall
       echo "Configuring the firewall to allow HTTP and HTTPS..."
-      sudo ufw allow 'Apache Full'
+      sudo ufw allow "Apache Secure"
+      sudo ufw reload
       echo "Apache has been configured for basic security and allowed through the firewall."
   else
       # Stop and disable Apache service
@@ -306,6 +333,37 @@ EOF
       echo "Apache service has been stopped and disabled."
   fi
 
+  if yes_no "Should FTP (VSFTPD) Be Maintained?"; then
+    cp /etc/vsftpd.conf /etc/vsftpd.conf.copy
+    sudo apt-get update && sudo apt-get install vsftpd
+    systemctl start vsftpd
+    systemctl enable vsftpd
+
+    sudo sed -i '/^anonymous_enable\s*=\s*YES/d' /etc/vsftpd.conf
+    grep -q '^anonymous_enable\s*=\s*NO$' /etc/vsftpd.conf || echo 'anonymous_enable=NO' | sudo tee -a /etc/vsftpd
+
+    grep -q '^ssl_enable=YES$' /etc/vsftpd.conf || echo 'ssl_enable=YES' | sudo tee -a /etc/vsftpd.conf
+    grep -q '^ssl_tlsv1=YES$' /etc/vsftpd.conf || echo 'ssl_tlsv1=YES' | sudo tee -a /etc/vsftpd.conf
+    sed -i '/^ssl_sslv2=YES/d' /etc/vsftpd.conf
+    sed -i '/^ssl_sslv3=YES/d' /etc/vsftpd.conf
+    sed -i '/^allow_anon_ssl=YES/d' /etc/vsftpd.conf
+
+    grep -q '^pasv_min_port=50000$' /etc/vsftpd.conf || echo 'pasv_min_port=50000' | sudo tee -a /etc/vsftpd.conf
+    grep -q '^pasv_max_port=50100$' /etc/vsftpd.conf || echo 'pasv_max_port=50100' | sudo tee -a /etc/vsftpd.conf
+    ufw allow 50000:50100/tcp
+    ufw allow vsftpd
+
+    sudo systemctl restart vsftpd
+    sudo ufw reload
+  else
+    sudo systemctl stop vsftpd
+    sudo apt-get remove --purge vsftpd
+    sudo apt-get autoremove
+
+    echo "Removed VSFTPD"
+  fi
+
+
   if yes_no "Should Edits Be Made To sysctl.conf?"; then
 
     sudo cp /etc/sysctl.conf /etc/sysctl.conf.backup
@@ -314,6 +372,10 @@ EOF
     # IPv4 TIME-WAIT ASSASSINATION Protection
     sudo sed -i '/^net\.ipv4\.tcp_rfc1337/d' /etc/sysctl.conf
     echo 'net.ipv4.tcp_rfc1337 = 1' | sudo tee -a /etc/sysctl.conf > /dev/null
+
+    #Disable ipv6
+    grep -q '^net.ipv6.conf.all.disable_ipv6\s*=\s*1$' /etc/sysctl.conf || echo 'net.ipv6.conf.all.disable_ipv6 = 1' | sudo tee -a /etc/sysctl.conf
+    grep -q '^net.ipv6.conf.default.disable_ipv6\s*=\s*1$' /etc/sysctl.conf || echo 'net.ipv6.conf.default.disable_ipv6 = 1' | sudo tee -a /etc/sysctl.conf
 
     # IPv4 TCP SYN Cookies
     sudo sed -i '/^net\.ipv4\.tcp_syncookies/d' /etc/sysctl.conf
@@ -440,6 +502,8 @@ EOF
   else
     echo "Ok"
   fi
+
+
 
   echo "Force Updates"
   update-manager -d
